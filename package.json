@@ -1,0 +1,22 @@
+{
+  "name": "bhu-drishtri-backend",
+  "version": "1.0.0",
+  "description": "A clean Express.js backend foundation.",
+  "keywords": [
+    "bhu_drishtri"
+  ],
+  "license": "ISC",
+  "author": "krish",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/seeds/seed.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "mongoose": "^9.10.2",
+    "nodemon": "^3.1.14"
+  }
+}
