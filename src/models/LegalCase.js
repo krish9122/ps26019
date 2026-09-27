@@ -34,6 +34,25 @@ const legalCaseSchema = new mongoose.Schema(
         "SUCCESSION_DISPUTE",
       ],
     },
+    disputeType: {
+      type: String,
+      enum: [
+        "OWNERSHIP",
+        "BOUNDARY",
+        "POSSESSION",
+        "ENCROACHMENT",
+        "INHERITANCE",
+        "MUTATION",
+        "TENANCY",
+        "ACQUISITION",
+        "OTHER",
+      ],
+    },
+    jurisdiction: {
+      type: String,
+      trim: true,
+      maxlength: 200,
+    },
     filingDate: {
       type: Date,
       required: [true, "Filing date is required"],
@@ -71,6 +90,23 @@ const legalCaseSchema = new mongoose.Schema(
       required: [true, "Respondent name(s) are required"],
       trim: true,
     },
+    parties: [
+      {
+        owner: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Owner",
+        },
+        role: {
+          type: String,
+          enum: [
+            "PETITIONER",
+            "RESPONDENT",
+            "APPLICANT",
+            "OTHER",
+          ],
+        },
+      },
+    ],
     description: {
       type: String,
       required: [true, "Case description is required"],
@@ -83,6 +119,19 @@ const legalCaseSchema = new mongoose.Schema(
     sourceReferenceUrl: {
       type: String,
       trim: true,
+      maxlength: 2048,
+      validate: {
+        validator: function (v) {
+          if (!v) return true;
+          try {
+            const url = new URL(v);
+            return url.protocol === "http:" || url.protocol === "https:";
+          } catch {
+            return false;
+          }
+        },
+        message: "Invalid URL format. Must be a valid http:// or https:// URL",
+      },
     },
     cnrNumber: {
       type: String,
@@ -124,6 +173,7 @@ const legalCaseSchema = new mongoose.Schema(
 legalCaseSchema.index({ courtName: 1, caseNumber: 1 }, { unique: true });
 legalCaseSchema.index({ cnrNumber: 1 }, { sparse: true });
 legalCaseSchema.index({ status: 1 });
+legalCaseSchema.index({ disputeType: 1 });
 legalCaseSchema.index({ "parcels.parcel": 1 });
 
 const LegalCase = mongoose.model("LegalCase", legalCaseSchema);
