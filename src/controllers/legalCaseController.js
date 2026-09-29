@@ -58,7 +58,7 @@ const preventMongoOperators = (obj) => {
       );
     }
     const value = obj[key];
-    if (value && typeof value === "object" && !Array.isArray(value)) {
+    if (value && typeof value === "object") {
       preventMongoOperators(value);
     }
   }
@@ -198,8 +198,10 @@ const syncParcelWithCase = async (parcelId, legalCase, pEntry) => {
   const parcel = await Parcel.findById(parcelId);
   if (!parcel) return;
 
-  const isStay =
-    legalCase.status === "STAY_ORDER_GRANTED" || Boolean(pEntry?.isStayActive);
+  // The LegalCase status is the source of truth for a case-level stay. The
+  // schema has no rule that treats INTERIM_INJUNCTION as a stay, so it remains
+  // false here unless that business rule is explicitly added in the future.
+  const isStay = legalCase.status === "STAY_ORDER_GRANTED";
 
   const caseData = {
     legalCase: legalCase._id,
@@ -564,6 +566,14 @@ const deactivateLegalCase = asyncHandlers(async (req, res) => {
 
   legalCase.isActive = false;
   await legalCase.save();
+
+  // Retain historical case references while clearing any active stay state on
+  // every Parcel that embeds this legal case.
+  await Parcel.updateMany(
+    { "legalCases.legalCase": legalCase._id },
+    { $set: { "legalCases.$[caseEntry].isStayActive": false } },
+    { arrayFilters: [{ "caseEntry.legalCase": legalCase._id }] }
+  );
 
   return res
     .status(200)
